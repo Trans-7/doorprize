@@ -8,8 +8,8 @@
 
     Private Sub Form2_display_DoubleClick(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.DoubleClick
         Me.WindowState = FormWindowState.Normal
-        Me.Width = 800
-        Me.Height = 600
+        Me.Width = FormWindowState.Maximized
+        Me.Height = FormWindowState.Minimized
     End Sub
 
     Private Sub Form2_display_SizeChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.SizeChanged

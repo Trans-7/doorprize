@@ -16,14 +16,15 @@ Public Class Form1
     Dim random As New Random
     Dim prizes
 
-    Dim connectionString As String = "Data Source=localhost\SQLEXPRESS;Initial Catalog=db_doorprize;Integrated Security=True"
-    'Dim connectionString As String = "Data Source=172.16.20.179,1433;Initial Catalog=db_doorprize;User ID=doorprize;Password=doorprizet7"
+    'Dim connectionString As String = "Data Source=localhost\SQLEXPRESS;Initial Catalog=db_doorprize;Integrated Security=True"
+    Dim connectionString As String = "Data Source=172.16.20.179,1433;Initial Catalog=db_doorprize;User ID=doorprize;Password=doorprizet7"
     Dim conn1 As New SqlConnection
     Dim sqlDA As New SqlDataAdapter
     Dim dtParticipant As New DataTable
     Dim dtPrize As New DataTable
     Dim dtWinner As New DataTable
     Dim dtRandom As New DataTable
+    Dim dtCancel As New DataTable
     Dim SQL
 
     Private Sub TextBox_FilePath_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles TextBox_FilePath.Click
@@ -227,7 +228,14 @@ Public Class Form1
         dtWinner.Columns.Add("NIK")
         dtWinner.Columns.Add("Name")
         dtWinner.Columns.Add("Prize")
+        'dtWinner.Columns.Add("Cancel")
         DataGridView4.DataSource = dtWinner
+
+        dtCancel.Columns.Add("NIK")
+        dtCancel.Columns.Add("Name")
+        dtCancel.Columns.Add("Prize")
+        'dtCancel.Columns.Add("Cancel")
+        DataGridView6.DataSource = dtCancel
 
         Dim deleteItem As String
         conn1 = New SqlConnection(connectionString)
@@ -249,8 +257,8 @@ Public Class Form1
 
     Private Sub fitTo1stMon()
         Dim screens() As Screen = Screen.AllScreens
-        Form2_display.Width = 500
-        Form2_display.Height = 600
+        'Form2_display.Width = 1000
+        'Form2_display.Height = 800
         Form2_display.Top = screens(0).WorkingArea.Top
         Form2_display.Left = screens(0).WorkingArea.Left
     End Sub
@@ -297,6 +305,12 @@ Public Class Form1
 
         Next
         Form2_display.DataGridView1.DataSource = dtRandom
+        'For i As Integer = 0 To Form2_display.DataGridView1.Columns.Count - 1
+        'Form2_display.DataGridView1.Columns(i).AutoSizeMode = DataGridViewAutoSizeColumnMode.DisplayedCells
+        'Form2_display.DataGridView1.ColumnHeadersDefaultCellStyle.
+        Form2_display.DataGridView1.Columns(1).Width = 400
+        Form2_display.DataGridView1.Columns(2).Width = 200
+        'Next
 
         '        For Each rowPart As Participant In randomParticipant
         '            'Dim counRandWinner As Integer = 0
@@ -440,7 +454,7 @@ Public Class Form1
         xlWorkSheet.Cells(1, 3) = "Prize"
         currRow = 2
 
-        For i As Integer = 0 To DataGridView4.Rows.Count - 2
+        For i As Integer = 0 To DataGridView4.Rows.Count - 1
             Dim nik As String
             nik = DataGridView4.Rows(i).Cells(0).Value
             Dim name As String
@@ -454,7 +468,7 @@ Public Class Form1
             newParticipantWinner.prize = prize
             winnerList.Add(newParticipantWinner)
         Next
-        
+
         For Each p As Participant In winnerList
             xlWorkSheet.Cells(currRow, 1) = p.nik
             xlWorkSheet.Cells(currRow, 2) = p.name
@@ -499,8 +513,8 @@ Public Class Form1
 
             Dim rowToUpdate = dtPrize.AsEnumerable().Where(Function(r) r.Item("Name").Equals(prizename)).FirstOrDefault()
             rowToUpdate.SetField("Qty", rowToUpdateData.qty - 1)
-
             dtWinner.Rows.Add(row.Item("NIK"), row.Item("Name"), row.Item("Prize"))
+
         Next
 
         For i As Integer = 0 To dtRandom.Rows.Count - 1
@@ -510,7 +524,7 @@ Public Class Form1
                 Dim prizeName = dtRandom.Rows(i)(2)
                 Dim SqlInsertClaim As String
                 Dim claimStatus As String = "CLAIM"
-                SqlInsertClaim = "Insert into Claim (ClaimNik, ClaimName, ClaimPrize, ClaimStatus) Values ('" & nik & "','" & Name & "','" & prizename & "', '" & claimStatus & "')"
+                SqlInsertClaim = "Insert into Claim (ClaimNik, ClaimName, ClaimPrize, ClaimStatus) Values ('" & nik & "','" & name & "','" & prizeName & "', '" & claimStatus & "')"
                 sqlDA.InsertCommand = New SqlCommand(SqlInsertClaim, conn1)
                 conn1.Open()
                 sqlDA.InsertCommand.ExecuteNonQuery()
@@ -533,7 +547,22 @@ Public Class Form1
         dtParticipant.AcceptChanges()
 
         dtRandom.Clear()
-        DataGridView4.ReadOnly = True
+        'DataGridView4.ReadOnly = True
+
+        Dim AddColumn As New DataGridViewCheckBoxColumn
+        AddColumn.HeaderText = "Cancel"
+
+        If DataGridView4.Columns.Count < 4 Then
+            DataGridView4.Columns.Add(AddColumn)
+        End If
+        For i As Integer = 0 To 2
+            DataGridView4.Columns(i).ReadOnly = True
+            If i = 3 Then
+                DataGridView4.Columns(i).ReadOnly = False
+            End If
+        Next
+
+        DataGridView4.AllowUserToAddRows = False
 
         If (dtRandom.Rows.Count = 0) Then
             BtnSvWinner.Enabled = False
@@ -553,5 +582,34 @@ Public Class Form1
         If Not confirm Then
             e.Cancel = True
         End If
+    End Sub
+
+    Private Sub GetDownButton_Click(sender As Object, e As EventArgs) Handles GetDownButton.Click
+        Dim dataCancel As New DataTable
+        dataCancel.Columns.Add("Nik", GetType(String))
+        dataCancel.Columns.Add("Name", GetType(String))
+        dataCancel.Columns.Add("Prize", GetType(String))
+
+        For i As Integer = 0 To DataGridView4.Rows.Count - 1
+            If DataGridView4.Rows(i).Cells(3).Value = True Then
+                dataCancel.Rows.Add(
+                    DataGridView4.Rows(i).Cells(0).Value,
+                    DataGridView4.Rows(i).Cells(1).Value,
+                    DataGridView4.Rows(i).Cells(2).Value
+                    )
+            End If
+        Next
+LabelThis:
+        Dim CurrentRows As Integer = DataGridView4.Rows.Count - 1
+        For i As Integer = 0 To CurrentRows
+            If DataGridView4.Rows(i).Cells(3).Value = True Then
+                DataGridView4.Rows.Remove(DataGridView4.Rows(i))
+                CurrentRows -= 1
+                GoTo LabelThis
+            End If
+        Next
+
+        DataGridView6.DataSource = dataCancel
+
     End Sub
 End Class
